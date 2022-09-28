@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import { genId } from './utils';
 import { vectorizeSegmentation } from './tracing';
-
+import * as tf from '@tensorflow/tfjs';
+import * as cocossd from '@tensorflow-models/coco-ssd';
 export function withPredictions(Comp) {
   return class PredictionsLayer extends Component {
     constructor(props) {
@@ -14,10 +15,24 @@ export function withPredictions(Comp) {
     }
 
     async makePrediction(model, options = {}) {
-      const { imgB64, b64Scaling, height, width, fetch, imageUrl } = this.props;
+      const { imgB64, b64Scaling, height, width, fetch } = this.props;
       const { id } = model;
-      console.log(this.props.imageUrl);
-      console.log(window.location.pathname);
+
+      const runCoco = async imageUrl => {
+        const net = await cocossd.load();
+
+        setInterval(() => {
+          detect(net);
+        }, 10);
+      };
+
+      const detect = async (net, imageUrl) => {
+        const obj = await net.detect(imageUrl);
+        console.log(obj);
+      };
+
+      runCoco(this.props.imageUrl);
+
       const req = fetch('/api/mlmodels/' + id, {
         method: 'POST',
         headers: {
@@ -28,13 +43,13 @@ export function withPredictions(Comp) {
           instances: [
             {
               input_bytes: {
-                imageUrl,
+                imageUrl: this.props.imageUrl,
               },
             },
           ],
         }),
       });
-
+      console.log('props', this.props.imageUrl);
       const resp = await (await req).json();
 
       if (model.type === 'object_detection') {

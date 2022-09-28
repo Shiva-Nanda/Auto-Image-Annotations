@@ -6,6 +6,8 @@
     "start": "concurrently \"cd client && yarn start\" \"cd server && yarn start\""
   },
   "dependencies": {
-    "concurrently": "^4.1.0"
+    "@tensorflow/tfjs-backend-cpu": "^3.20.0",
+    "@tensorflow/tfjs-backend-webgl": "^3.20.0",
+    "concurrently": "^7.3.0"
   }
 }

@@ -3,6 +3,11 @@ const bodyParser = require('body-parser');
 const multer = require('multer');
 const archiver = require('archiver');
 const request = require('request');
+const cocoSsd = require('./GetBoundingBoxes');
+// models
+// require('@tensorflow/tfjs-backend-cpu');
+// require('@tensorflow/tfjs-backend-webgl');
+// const cocoSsd = require('@tensorflow-models/coco-ssd');
 
 const path = require('path');
 const fs = require('fs').promises;
@@ -16,6 +21,8 @@ const { setup, checkLoginMiddleware, authHandler } = require('./auth');
 
 const UPLOADS_PATH =
   process.env.UPLOADS_PATH || path.join(__dirname, '..', 'uploads');
+
+const SERVER_PATH = path.join(__dirname, '..');
 
 const app = express();
 
@@ -38,17 +45,41 @@ app.post('/api/mlmodels', checkLoginMiddleware, (req, res) => {
 });
 
 app.post('/api/mlmodels/:id', (req, res) => {
+  console.log('new Call');
+  console.log(req.params);
   const { id } = req.params;
-  const model = mlmodels.get(id);
-  request
-    .post(model.url, {
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
+  // const model = mlmodels.get(id);
+  const imageUrl = req.body.instances[0].input_bytes.imageUrl;
+  console.log('imageUrl ', imageUrl);
+  const predictions_format = `
+  {
+    "predictions": [
+      {
+         "det_boxes": [<ymin>, <xmin>, <ymax>, <xmax>],
+         "det_class": <str>,
+         "det_score": <0 ~ 1 floating number
       },
-      body: JSON.stringify(req.body),
-    })
-    .pipe(res);
+      ...,
+      ...
+      ]
+  }
+  `;
+  const temp_output = {
+    predictions: [
+      {
+        det_score: 0.877061,
+        det_boxes: [0.16713, 0.183, 0.99952, 0.4513],
+        det_class: 'Footwear',
+      },
+    ],
+  };
+  console.log(UPLOADS_PATH);
+  cocoSsd.predict(SERVER_PATH + imageUrl).then(pred => {
+    console.log('in the folder predicted', pred);
+    res.end(JSON.stringify(pred));
+  });
+
+  // res.end(JSON.stringify(temp_output));
 });
 
 app.delete('/api/mlmodels/:id', checkLoginMiddleware, (req, res) => {
@@ -210,11 +241,13 @@ const uploads = multer({
   storage: multer.diskStorage({
     destination: async (req, file, cb) => {
       const { projectId } = req.params;
+      console.log(projectId);
       try {
         if (!projects.get(projectId)) {
           throw new Error('No such projectId.');
         }
         const dest = path.join(UPLOADS_PATH, projectId);
+        // console.log("uploads path", dest);
         try {
           await fs.mkdir(dest);
         } catch (err) {}

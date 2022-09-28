@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@tensorflow-models/coco-ssd": "^2.2.2",
+    "@tensorflow/tfjs": "^3.20.0",
     "array-move": "^1.0.0",
     "http-proxy-middleware": "^0.19.1",
     "immutability-helper": "^3.0.0",

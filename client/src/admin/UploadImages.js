@@ -71,13 +71,14 @@ export default class UploadImages extends Component {
 
   async handleFilesSubmit(e) {
     e.preventDefault();
-
+    console.log('e' + e);
     const form = e.target;
     const formData = new FormData(form);
-
+    const token = sessionStorage.getItem('token');
     await fetch('/api/uploads/' + this.props.projectId, {
       method: 'POST',
       body: formData,
+      Authorization: `Bearer ${token}`,
     });
 
     this.props.onChange();

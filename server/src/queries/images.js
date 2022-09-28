@@ -1,6 +1,25 @@
 const db = require('./db').getDb();
 const path = require('path');
 
+/*
+getForProject: (projectId) 
+returns all images data
+example:
+[
+  {
+    id: 1,
+    originalName: 'tesla.jpg',
+    link: '/uploads/1/1.jpg',
+    externalLink: null,
+    localPath: null,
+    labeled: 0,
+    labelData: { labels: [Object], height: 627, width: 1200 },
+    lastEdited: 1661526695010,
+    projectsId: 1
+  }
+]
+*/
+
 const Images = {
   getForProject: projectId => {
     const images = db
@@ -11,8 +30,10 @@ from images
 where images.projectsId = ?;
 `
       )
-      .all(projectId);
+      .all(projectId); // ? is replaced by projecctId
+
     return images.map(image => ({
+      // all other keys will retain same data except labelData
       ...image,
       labelData: JSON.parse(image.labelData),
     }));
@@ -28,6 +49,7 @@ where images.id = ?;
 `
       )
       .get(id);
+    console.log(image);
 
     return { ...image, labelData: JSON.parse(image.labelData) };
   },
@@ -59,6 +81,7 @@ values (?, ?, 'stub', 0, '{ }', ?);
   },
 
   updateLink: (imageId, { projectId, filename }) => {
+    //extension name
     const ext = path.extname(filename);
     const link = `/uploads/${projectId}/${imageId}${ext}`;
     db.prepare(
@@ -152,5 +175,14 @@ where projectsId = ? and originalName = ?;
     return { ...image, labelData: JSON.parse(image.labelData) };
   },
 };
+
+console.log(Images.getForProject());
+const temp = db.prepare('select * from images').all();
+const temp2 = temp.map(image => ({
+  ...image,
+  labelData: JSON.parse(image.labelData),
+}));
+console.log(JSON.parse(temp[0].labelData));
+console.log('temp2', temp2);
 
 module.exports = Images;
